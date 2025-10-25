@@ -250,7 +250,7 @@ docker-compose up --build
 
 **Manas Tripathi**  
 Full Stack & AI Engineer  
-📧 manastripathi.contact@gmail.com  
+📧 manastripathi783@gmail.com  
 🔗 [GitHub: @ManasTripathi07](https://github.com/ManasTripathi07)
 
 ---
