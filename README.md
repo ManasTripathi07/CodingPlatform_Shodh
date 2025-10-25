@@ -1,36 +1,57 @@
 # 🧠 Shodh-a-Code — Real-Time Coding Contest Platform
 
 **Shodh-a-Code** is a full-stack, end-to-end **online coding contest platform** built as a prototype for *Shodh AI’s Coding Challenge System*.  
-It features live code submission, secure containerized execution (via Docker), and a real-time leaderboard — replicating how modern competitive programming platforms like LeetCode or Codeforces handle submissions at scale.
+It enables users to join coding contests, solve programming problems, submit code for live evaluation, and view results instantly on a real-time leaderboard.
 
 ---
 
-## 🚀 Project Overview
+## 📘 Table of Contents
 
-**Goal:**  
-To create a fully functional prototype that assesses end-to-end software engineering capability — integrating **backend execution orchestration**, **frontend interactivity**, and **DevOps containerization** into one cohesive product.
+1. [Project Overview](#project-overview)
+2. [Architecture Overview](#architecture-overview)
+3. [Tech Stack](#tech-stack)
+4. [Folder Structure](#folder-structure)
+5. [Setup Instructions](#setup-instructions)
+6. [API Design](#api-design)
+7. [Design Choices & Justifications](#design-choices--justifications)
+8. [Judge Workflow](#judge-workflow)
+9. [Troubleshooting](#troubleshooting)
+10. [Future Enhancements](#future-enhancements)
+11. [Author](#author)
+12. [License](#license)
 
-**Core Idea:**  
-Students or users can join a live contest using a Contest ID, solve programming problems, and view a dynamic leaderboard as the judge system evaluates their code in real time inside isolated Docker containers.
+---
+
+## 🧩 Project Overview
+
+**Objective:**  
+To design and implement a complete **live coding contest system** capable of:
+- Accepting user-submitted source code securely
+- Running it inside isolated Docker containers
+- Comparing results with problem test cases
+- Displaying live updates on a leaderboard
+
+This project demonstrates **end-to-end full-stack development, systems integration, and DevOps orchestration**.
 
 ---
 
 ## 🏗️ Architecture Overview
 
+```
 Frontend (Next.js + Tailwind)
-│
-│ REST API Calls (polling every 2-3s)
-▼
+        │
+        │ REST API Calls (polling every 2–3s)
+        ▼
 Backend (Spring Boot)
-├─ REST API Layer
-├─ Judge Service (Docker Orchestration via ProcessBuilder)
-├─ Submission Queue Worker
-├─ PostgreSQL / H2 DB (JPA Repositories)
-└─ Leaderboard Computation Engine
-│
-▼
+ ├─ REST API Layer
+ ├─ Service Layer (ContestService, SubmissionService)
+ ├─ Judge Engine (Docker Orchestration via ProcessBuilder)
+ ├─ Database (Contest, Problem, Submission, User)
+ └─ Leaderboard Service
+        │
+        ▼
 Docker Runner (Java Execution Environment)
-
+```
 
 ---
 
@@ -38,211 +59,202 @@ Docker Runner (Java Execution Environment)
 
 | Layer | Technology | Purpose |
 |-------|-------------|----------|
-| **Frontend** | Next.js (React 18), Tailwind CSS | Dynamic contest UI, code editor, leaderboard |
-| **Backend** | Spring Boot (Java 17), JPA, Maven | REST APIs, judge orchestration, data persistence |
-| **Database** | PostgreSQL / H2 | Contest, problem, user, submission data |
-| **Containerization** | Docker, Docker Compose | Sandbox execution and environment consistency |
-| **Language Supported** | Java (default) | Executed inside `shodh-runner-java` container |
-| **Dev Tools** | VS Code, Git, GitHub | Development and version control |
+| **Frontend** | Next.js (React 18), Tailwind CSS | UI for joining contests, coding, and live updates |
+| **Backend** | Spring Boot, Java 17, Maven | REST API & business logic |
+| **Database** | PostgreSQL / H2 | Data persistence |
+| **Containerization** | Docker, Docker Compose | Code execution sandbox |
+| **Language Supported** | Java (default) | Executed in runner container |
+| **Version Control** | Git + GitHub | Source management |
 
 ---
 
 ## 📁 Folder Structure
 
-
-
+```
 CodingPlatform_Shodh/
-├── backend/ # Spring Boot backend
-│ ├── src/main/java/... # Source code (entities, repos, services, controllers)
-│ ├── src/main/resources/ # Properties + seed data
-│ ├── Dockerfile # Backend image builder
-│ └── pom.xml # Maven project config
+├── backend/                  # Spring Boot backend
+│   ├── src/main/java/...     # Controllers, Services, Entities, Repos
+│   ├── src/main/resources/   # application.properties + seeds
+│   ├── Dockerfile            # Backend image builder
+│   └── pom.xml
 │
-├── frontend/ # Next.js frontend app
-│ ├── pages/ # Routes (Join, Contest, etc.)
-│ ├── styles/ # Tailwind styles
-│ ├── package.json # NPM config
-│ └── Dockerfile # Frontend image
+├── frontend/                 # Next.js + Tailwind frontend
+│   ├── pages/                # Join & Contest pages
+│   ├── components/           # UI components
+│   ├── package.json
+│   └── Dockerfile
 │
-├── docker/runner/ # Code runner container (Java)
-│ └── Dockerfile
+├── docker/runner/            # Docker runner for executing code
+│   └── Dockerfile
 │
-├── docker-compose.yml # Multi-service orchestration
-└── README.md # This file
-
-
----
-
-## 💡 Key Features
-
-### 🎯 1. Contest Management
-- `GET /api/contests/{id}` → Fetch contest details & problems  
-- Supports pre-seeded sample contests (via `data.sql`).
-
-### ⚙️ 2. Code Submission System
-- `POST /api/submissions` → Accepts user code, queues it for judging  
-- `GET /api/submissions/{id}` → Fetches live status (`Pending`, `Running`, `Accepted`, etc.)
-
-### 🧪 3. Docker-Based Judge Engine
-- Executes user code inside a custom `shodh-runner-java` container.  
-- Each container is:
-  - **Isolated:** Network disabled (`--network none`)
-  - **Restricted:** Memory & CPU limits applied
-  - **Clean:** Auto-removed after each run
-
-### 📊 4. Live Leaderboard
-- `GET /api/contests/{id}/leaderboard` → Aggregates submissions  
-- Polls every 15–30s on the frontend to simulate real-time updates.
-
-### ⚡ 5. Real-Time Frontend
-- Polling-based update system for status and leaderboard.  
-- Clean UI built with Tailwind.  
-- Separate “Join” page and “Contest” workspace with:
-  - Problem selector
-  - Code editor (textarea / Monaco-ready)
-  - Submission button
-  - Live status + leaderboard sidebar.
-
----
-
-## 🧩 API Endpoints Summary
-
-| Method | Endpoint | Description |
-|--------|-----------|-------------|
-| `GET` | `/api/contests/{contestId}` | Fetch contest & problem info |
-| `POST` | `/api/submissions` | Submit code for a problem |
-| `GET` | `/api/submissions/{submissionId}` | Check submission result |
-| `GET` | `/api/contests/{contestId}/leaderboard` | Live leaderboard data |
+├── docker-compose.yml        # Orchestration config
+└── README.md
+```
 
 ---
 
 ## 🛠️ Setup Instructions
 
-### 🔹 1. Clone Repository
-
+### 1️⃣ Clone Repository
+```bash
 git clone https://github.com/ManasTripathi07/CodingPlatform_Shodh.git
 cd CodingPlatform_Shodh
+```
 
-🔹 2. Build the Runner Image
+### 2️⃣ Build Runner Image
+```bash
 docker build -t shodh-runner-java:latest docker/runner
+```
 
-🔹 3. Build Backend JAR
+### 3️⃣ Build Backend JAR
+```bash
 cd backend
 mvn -DskipTests package
 cd ..
+```
 
-🔹 4. Start Everything with Docker Compose
+### 4️⃣ Start Entire Stack
+```bash
 docker-compose up --build
+```
 
+### 5️⃣ Access
+- **Frontend:** http://localhost:3000  
+- **Backend:** http://localhost:8080  
 
-The following services will start:
+---
 
-🐘 PostgreSQL (port 5432)
+## 🧠 API Design
 
-⚙️ Backend (port 8080)
+### 1️⃣ Get Contest Details
+**Endpoint:**  
+`GET /api/contests/{contestId}`  
 
-🌐 Frontend (port 3000)
+**Response Example:**
+```json
+{
+  "id": 1,
+  "title": "Shodh Coding Challenge",
+  "problems": [
+    { "id": 1, "title": "Sum Two Numbers", "description": "Add two integers." },
+    { "id": 2, "title": "Echo", "description": "Print input as output." }
+  ]
+}
+```
 
-Access the app at http://localhost:3000
+### 2️⃣ Submit Code
+**Endpoint:**  
+`POST /api/submissions`
 
-🧠 How the Judge Works
+**Request Body:**
+```json
+{
+  "contestId": 1,
+  "problemId": 1,
+  "username": "manas",
+  "language": "java",
+  "sourceCode": "public class Main { public static void main(String[] args){ System.out.println(2+3); } }"
+}
+```
 
-User submits code → /api/submissions
+**Response:**
+```json
+{ "submissionId": 101, "status": "PENDING" }
+```
 
-Backend saves submission → sets status = PENDING
+### 3️⃣ Get Submission Status
+**Endpoint:**  
+`GET /api/submissions/{submissionId}`
 
-Worker thread picks it → runs inside Docker using:
+**Response Example:**
+```json
+{
+  "submissionId": 101,
+  "status": "ACCEPTED",
+  "runtime": "0.89s",
+  "memory": "32MB"
+}
+```
 
-docker run --rm --network none --memory 256m \
-  -v /tmp/submissions/<id>:/home/src \
-  shodh-runner-java:latest bash -lc "javac Main.java && timeout 2s java Main"
+### 4️⃣ Get Leaderboard
+**Endpoint:**  
+`GET /api/contests/{contestId}/leaderboard`
 
-
-The stdout is compared to the expected output (from testcases).
-
-Status updated to:
-
-✅ ACCEPTED
-
-❌ WRONG_ANSWER
-
-⚙️ RUNTIME_ERROR
-
-⏱️ TIME_LIMIT_EXCEEDED
-
-Leaderboard recalculates automatically.
-
-🖥️ Developer Shortcuts
-Run Backend Locally (H2 Database)
-cd backend
-mvn spring-boot:run -Dspring-boot.run.arguments="--spring.datasource.url=jdbc:h2:mem:shodh"
-
-Run Frontend Locally
-cd frontend
-npm install
-npm run dev
-
-
-Access at http://localhost:3000
-
-🧩 Design Choices & Justifications
-Decision	Rationale
-Spring Boot + ProcessBuilder	Simple, reliable orchestration of Docker commands; easy async queue integration
-H2 + PostgreSQL	H2 for local testing, Postgres for production
-Next.js + Tailwind	Modern UI stack with automatic routing and reactive updates
-Polling vs WebSockets	Simpler implementation for prototype; stable across browsers
-Docker Runner	Prevents untrusted code from affecting host; resource-limited & isolated
-Single docker-compose file	One-command environment setup for evaluators
-🔒 Security Considerations
-
-Containers run without network access (--network none).
-
-Strict resource caps (--memory 256m, --cpus 0.5).
-
-Temporary directories deleted post-execution.
-
-Docker socket access limited to internal development; not for production.
-
-Future hardening: integrate gVisor / Firecracker sandboxes.
-
-🧾 Sample Test Contest (Pre-Seeded)
-Contest ID	Problems	Example
-1	A - Sum Two Numbers, B - Echo	Run A with inputs 2 3 → 5, 10 25 → 35
-
-To test:
-
-curl -X POST http://localhost:8080/api/submissions \
-  -H "Content-Type: application/json" \
-  -d '{"contestId":1,"problemId":1,"username":"alice","language":"java","sourceCode":"public class Main { public static void main(String[] a){ System.out.println(5); } }"}'
-
-🧰 Troubleshooting
-Issue	Cause	Fix
-ERR_CONNECTION_REFUSED	Backend not running	Start backend (java -jar target/...jar or docker-compose up)
-404 /api/...	Frontend hitting port 3000	Update API_BASE in [contestId].js or use next.config.js rewrite
-Database connection error	Postgres container not ready	Wait 10s and restart backend
-File too large when pushing to GitHub	node_modules committed	Use .gitignore and BFG to clean history
-CORS error	Missing backend CORS config	Add CorsConfig.java (see docs)
-🧱 Future Enhancements
-
-✅ Add Python and C++ runner images
-
-🔁 Replace polling with WebSocket push updates
-
-🧑‍🏫 Instructor dashboard & contest creation UI
-
-🧩 Multi-language sandbox pool
-
-☁️ Deploy to AWS ECS or Kubernetes for scalability
-
-📜 License
-
-This project is open-sourced under the MIT License.
-Feel free to use, modify, or extend it for educational or technical evaluations.
-
-👨‍💻 Author
-
-Manas Tripathi
-Full-Stack Engineer & AI Developer
-📧 [manastripathi.contact@gmail.com
+**Response Example:**
+```json
+[
+  { "rank": 1, "username": "manas", "score": 200, "accepted": 2 },
+  { "rank": 2, "username": "alok", "score": 100, "accepted": 1 }
 ]
-🔗 GitHub: @ManasTripathi07
+```
+
+---
+
+## 🧩 Design Choices & Justifications
+
+### Backend Architecture
+- **Layered design:** Controllers → Services → Repositories
+- **Judge Engine:** Uses `ProcessBuilder` to execute Docker containers securely
+- **Database:** Tables normalized for easy leaderboard aggregation
+
+### Frontend Architecture
+- **Framework:** Next.js + Tailwind CSS for modular UI
+- **State Management:** Local React state + polling instead of Redux for simplicity
+- **Real-Time:** Polling endpoints every few seconds for live updates
+
+### Docker Orchestration
+- Each code submission runs inside an isolated container:
+  ```bash
+  docker run --rm --network none --memory 256m --cpus 0.5 ...
+  ```
+- **Trade-offs:** simple and fast, but shares host Docker socket in development
+
+### DevOps
+- Single `docker-compose.yml` brings up everything with one command
+- H2 DB for local use, PostgreSQL for production
+
+---
+
+## 🧮 Judge Workflow
+
+1. User submits code
+2. Backend saves it as `PENDING`
+3. Code runs inside Docker container
+4. Output is compared against expected
+5. Status updated & leaderboard refreshed
+
+---
+
+## 🧰 Troubleshooting
+
+| Issue | Cause | Fix |
+|--------|--------|-----|
+| `404 /api/...` | Frontend hitting wrong port | Update `API_BASE` or use rewrite |
+| `ERR_CONNECTION_REFUSED` | Backend not running | Start backend or rebuild JAR |
+| `File >100MB push error` | node_modules in Git | Add `.gitignore`, clean with BFG |
+| `CORS error` | Missing config | Add `CorsConfig.java` |
+
+---
+
+## 🧾 Future Enhancements
+
+- Multi-language support (Python, C++)
+- WebSocket-based real-time updates
+- User auth & admin dashboard
+- Docker pool optimization
+- Cloud deployment (AWS ECS / Kubernetes)
+
+---
+
+## 👨‍💻 Author
+
+**Manas Tripathi**  
+Full Stack & AI Engineer  
+📧 manastripathi.contact@gmail.com  
+🔗 [GitHub: @ManasTripathi07](https://github.com/ManasTripathi07)
+
+---
+
+## 📜 License
+
+Licensed under the **MIT License**.
